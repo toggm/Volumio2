@@ -1,5 +1,6 @@
 #!/bin/bash
 TMPWORK="/home/volumio/tmpwork"
+
 HELP() {
   echo "
 
@@ -14,12 +15,6 @@ The script will determine how the initrd has been compressed and unpack/ repack 
   exit 1
 }
 
-EXISTS=`which nano`
-if [ "x" = "x$EXISTS" ]; then
-    echo "This script requires text editor 'nano'"
-    echo "Please install 'nano'"
-    exit 1
-fi
 
 NUMARGS=$#
 if [ "$NUMARGS" -eq 0 ]; then
@@ -43,10 +38,8 @@ while getopts d:f: FLAG; do
 done
 
 if [ -z $INITRDNAME ]; then
-	echo ""
-	echo "$0: missing argument(s)"
-	HELP
-	exit 1
+	echo "Initrd name not specified, auto detecting"
+	
 fi
 
 if [ ! -f $INITRDNAME ]; then
