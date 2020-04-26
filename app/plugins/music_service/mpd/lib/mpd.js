@@ -35,7 +35,7 @@ MpdClient.connect = function (options) {
   options = options || defaultConnectOpts;
 
   var client = new MpdClient();
-  client.socket = net.connect('/run/mpd/socket', function () {
+  client.socket = net.connect(options, function () {
     client.emit('connect');
   });
   client.socket.setEncoding('utf8');

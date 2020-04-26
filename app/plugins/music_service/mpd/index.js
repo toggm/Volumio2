@@ -630,8 +630,8 @@ ControllerMpd.prototype.mpdInit = function () {
 ControllerMpd.prototype.initializeMpdConnection = function () {
   var self = this;
 
-  // Connect to MPD only if process MPD is running
-  exec('/bin/pidof mpd', {uid: 1000, gid: 1000}, function (error, stdout, stderr) {
+  // Connect to MPD only if process Mopidy is running
+  exec('/bin/pidof mopidy', {uid: 1000, gid: 1000}, function (error, stdout, stderr) {
     if (error) {
       self.logger.error('Cannot initialize  MPD Connection: MPD is not running');
     } else {
