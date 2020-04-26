@@ -1426,6 +1426,44 @@ ControllerMpd.prototype.lsInfo = function (uri) {
   return defer.promise;
 };
 
+ControllerMpd.prototype.lsInfoRec = function(uri) {
+  var self = this;
+
+  var defer = libQ.defer();
+  var list = self.lsInfo(uri);
+  var response = [];
+  var promises = [];
+  list.then((list) => {
+    var items = list.navigation.lists[0].items;
+    for (var i in items) {
+      var item = items[i];
+      if (item.type === 'folder') {
+        promises.push(self.lsInfoRec(item.uri));
+      }
+      else {
+        response.push(item);
+      }
+    }
+    if (promises.length > 0) {
+
+      libQ.all(promises)
+        .then(function (result) {
+          defer.resolve(response.concat.apply([], result));
+        })
+        .fail(function (e) {
+            self.logger.error('Recusively lookup failed:'+e);
+        });
+    }
+    else {
+        defer.resolve(response);
+    }
+  })
+  .fail(function (e) {
+      self.logger.error('Recusively lookup failed:'+e);
+  });
+  return defer.promise;
+};
+
 ControllerMpd.prototype.listallFolder = function (uri) {
   var self = this;
   var defer = libQ.defer();
@@ -2222,7 +2260,29 @@ ControllerMpd.prototype.explodeUri = function (uri) {
         defer.reject(new Error());
       }
     });
-  } else if (uri.endsWith('.iso')) {
+  } else if (uri.startsWith('music-library/')) {
+      var list = self.lsInfoRec(uri);
+      var response = []
+      list.then((list) => {
+        if (list && list.length > 0) {
+          var items = list;
+          for (var i in items) {
+            var item = items[i];
+            response.push(item);
+              self.logger.info(item);
+          }
+        }
+        else {
+          response.push({
+            uri: uri,
+            service: 'mpd',
+            type: 'song'
+          });
+        }
+        defer.resolve(response);
+      });
+  }
+  else if (uri.endsWith('.iso')) {
     var uriPath = '/mnt/' + self.sanitizeUri(uri);
 
     var uris = self.scanFolder(uriPath);
