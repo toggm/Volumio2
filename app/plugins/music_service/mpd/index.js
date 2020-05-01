@@ -1364,7 +1364,7 @@ ControllerMpd.prototype.lsInfo = function (uri) {
                 }
               }
               var year, albumart, tracknumber, duration, composer, genre;
-              if (self.commandRouter.sharedVars.get('extendedMetas')) {
+              //if (self.commandRouter.sharedVars.get('extendedMetas')) {
                 year = self.searchFor(lines, i + 1, 'Date:');
                 if (year) {
                   year = parseInt(year);
@@ -1382,7 +1382,7 @@ ControllerMpd.prototype.lsInfo = function (uri) {
                 duration = self.searchFor(lines, i + 1, 'Time:');
                 composer = artist;
                 genre = self.searchFor(lines, i + 1, 'Genre:');
-              }
+              //}
 
               if (title) {
                 title = title;
@@ -1394,6 +1394,7 @@ ControllerMpd.prototype.lsInfo = function (uri) {
                 service: 'mpd',
                 type: 'song',
                 title: title,
+                name: title,                
                 artist: artist,
                 album: album,
                 uri: s0 + path,
