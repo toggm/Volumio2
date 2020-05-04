@@ -3123,6 +3123,8 @@ ControllerMpd.prototype.listAlbumSongs = function (uri, index, previous) {
   var cmd = libMpd.cmd;
   var duration = 0;
   var year = '';
+  var genre = '';
+  var albumTrackType = '';
 
   self.clientMpd.sendCommand(cmd(findstring, []), function (err, msg) {
     if (msg) {
@@ -3148,8 +3150,11 @@ ControllerMpd.prototype.listAlbumSongs = function (uri, index, previous) {
 
           var albumart = self.getAlbumArt({artist: artist, album: album}, self.getParentFolder(path), 'dot-circle-o');
           var time = parseInt(self.searchFor(lines, i + 1, 'Time:'));
+          var trackType = path.split('.').pop();
           duration = duration + parseInt(self.searchFor(lines, i + 1, 'Time:'));
           year = self.searchFor(lines, i + 1, 'Date:');
+          genre = self.searchFor(lines, i + 1, 'Genre:');
+          albumTrackType = trackType;
 
           if (title) {
             title = title;
@@ -3165,7 +3170,7 @@ ControllerMpd.prototype.listAlbumSongs = function (uri, index, previous) {
             type: 'song',
             tracknumber: track,
             duration: time,
-            trackType: path.split('.').pop()
+            trackType: trackType
           });
         }
       }
@@ -3186,7 +3191,9 @@ ControllerMpd.prototype.listAlbumSongs = function (uri, index, previous) {
                   album: album,
                   albumart: albumart,
                   year: isOrphanAlbum ? '' : year,
+                  genre: isOrphanAlbum ? '' : genre,
                   type: 'album',
+                  trackType: albumTrackType,
                   duration: duration
                 };
     } else self.logger.info(err);

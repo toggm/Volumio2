@@ -12,17 +12,10 @@ module.exports = CoreCommandRouter;
 function CoreCommandRouter (server) {
   metrics.time('CommandRouter');
 
-  var logfile = '/var/log/volumio.log';
-
-  fs.ensureFileSync(logfile);
   this.logger = winston.createLogger({
     format: winston.format.simple(),
     transports: [
-      new (winston.transports.Console)(),
-      new (winston.transports.File)({
-        filename: logfile,
-        json: false
-      })
+      new (winston.transports.Console)()
     ]
   });
 
@@ -440,10 +433,32 @@ CoreCommandRouter.prototype.addQueueItems = function (arrayItems) {
 
   return this.stateMachine.addQueueItems(arrayItems);
 };
+
+CoreCommandRouter.prototype.addPlayList = function (data) {
+    var self = this;
+    var defer = libQ.defer();
+
+    this.pushConsoleMessage('CoreCommandRouter::volumioaddPlayList');
+
+    var queueArray = this.stateMachine.getQueue();
+    if (queueArray && queueArray.length > 0) {
+        this.stateMachine.addQueueItems(data.list)
+            .then((result) => {
+              var playIndex = result.firstItemIndex + data.index;
+              this.volumioPlay(playIndex);
+        defer.resolve();
+    });
+    } else {
+      return self.replaceAndPlay(data);
+    }
+
+    return defer.promise;
+};
+
 CoreCommandRouter.prototype.replaceAndPlay = function (data) {
   var self = this;
   var defer = libQ.defer();
-  var self = this;
+
   this.pushConsoleMessage('CoreCommandRouter::volumioReplaceandPlayItems');
 
   this.stateMachine.clearQueue();
@@ -1549,10 +1564,10 @@ CoreCommandRouter.prototype.getI18nString = function (key) {
 
   if (this.i18nStrings) {
     if (splitted.length == 1) {
-      if (this.i18nStrings[key] !== undefined) { return this.i18nStrings[key]; } else return this.i18nStringsDefaults[key];
+      if (this.i18nStrings[key] !== undefined && this.i18nStrings[key] !== '') { return this.i18nStrings[key]; } else return this.i18nStringsDefaults[key];
     } else {
       if (this.i18nStrings[splitted[0]] !== undefined &&
-                this.i18nStrings[splitted[0]][splitted[1]] !== undefined) { return this.i18nStrings[splitted[0]][splitted[1]]; } else return this.i18nStringsDefaults[splitted[0]][splitted[1]];
+                this.i18nStrings[splitted[0]][splitted[1]] !== undefined && this.i18nStrings[splitted[0]][splitted[1]] !== '') { return this.i18nStrings[splitted[0]][splitted[1]]; } else return this.i18nStringsDefaults[splitted[0]][splitted[1]];
     }
   } else {
     	var emptyString = '';
@@ -1668,6 +1683,9 @@ CoreCommandRouter.prototype.translateKeys = function (parent, dictionary, defaul
               var value = defaultDictionary[category][key];
             } else {
               var value = dictionary[category][key];
+              if (value === '') {
+                value = defaultDictionary[category][key];
+              }
             }
             parent[keys[i]] = value;
           }
@@ -1980,6 +1998,23 @@ CoreCommandRouter.prototype.addPluginRestEndpoint = function (data) {
   } else {
     self.logger.error('Not Adding plugin to REST Endpoints, missing parameters');
   }
+};
+
+CoreCommandRouter.prototype.removePluginRestEndpoint = function (data) {
+    var self = this;
+    var updated = false;
+
+    if (data && data.endpoint) {
+        if (self.pluginsRestEndpoints.length) {
+            for (var i in self.pluginsRestEndpoints) {
+                var endpoint = self.pluginsRestEndpoints[i];
+                if (endpoint.endpoint === data.endpoint) {
+                    self.logger.info('Removing ' + data.endpoint + ' REST Endpoint');
+                    self.pluginsRestEndpoints.splice(i, 1);
+                }
+            }
+        }
+    }
 };
 
 CoreCommandRouter.prototype.getPluginsRestEndpoints = function () {
